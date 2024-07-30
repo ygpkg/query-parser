@@ -9,6 +9,7 @@ testdata = {
     "Key1:(Value1)": '{"op":"OR","exprs":[{{"key":"Key1","value":["Value1"]}]}',
     "Key1:(Value1 OR Value2)": '{"op":"OR","exprs":[{{"key":"Key1","value":["Value1"]},{"key":"Key1","value":["Value2"]}]}',
     "Key1:(Value1 OR NOT Value2)": '{"op":"OR","exprs":[{{"key":"Key1","value":["Value1"]}, {"op":"NOT","key":"Key1","value":["Value2"]}]}',
+    "NOT Key1:(Value1 OR Value2)": '{"op":"OR","exprs":[{{"op":"NOT","key":"Key1","value":["Value1"]},{"op":"NOT","key":"Key1","value":["Value2"]}]}',
     "Key1:(Value1 AND Value2)": '{"op":"AND","exprs":[{{"key":"Key1","value":["Value1"]},{"key":"Key1","value":["Value2"]}]}',
     "Key1:(Value1 AND NOT Value2)": '{"op":"AND","exprs":[{"key":"Key1","value":["Value1"]},{"op":"NOT","key":"Key1","value":["Value2"]}]}',
     "Key1:(Value1 NOT Value2)": '{"op":"AND","exprs":[{"key":"Key1","value":["Value1"]},{"op":"NOT","key":"Key1","value":["Value2"]}]}',
