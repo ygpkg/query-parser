@@ -1,60 +1,49 @@
 console.log("clearmann answer content: ")
 console.log("***************  start  *********************")
+// 解释下not语句的逻辑
+// !(a || b)              ---->   !a && !b
+// not ( k3:v3 or k4:v4 ) ---->   (not k3:v3) and (not k4:v4)
+function parseExpression(expression) {
+    function parseGroup(isBool = false) {
+        let exprs = [];
+        let currentOp = '';
 
-function evalExpression(expression) {
-    const value = [];
-    const op = [];
-    const pr = { "or": 1, "and": 2, "not": 2 };
+        while (expression.length > 0 && expression[0] !== ')') {
+            const c = expression.shift();
 
-    //
-    function eval() {
-        const exprs = [];
-        while (value.length && typeof value[value.length - 1] === "object") {
-            exprs.unshift(value.pop());
+            if (c === '(') {
+                exprs.push(parseGroup(isBool));
+            } else if (c === "and" || c === "or") {
+                let newOp = isBool ? (c === "and" ? "or" : "and") : c;
+                if (currentOp === '') {
+                    currentOp = newOp;
+                } else if (currentOp !== newOp) {
+                    exprs = [{ op: currentOp, exprs }];
+                    currentOp = newOp;
+                }
+            } else if (c === "not") {
+                exprs.push(parseGroup(true));
+            } else {
+                const [key, value] = c.split(':');
+                exprs.push(isBool ? { op: "not", key, value } : { key, value });
+            }
         }
-        const c = op.pop();
-        const x = {
-            op: c,
-            exprs
-        };
-        value.push(x);
-    }
-    // 通过':'分割为两个字符串
-    function splitAtFirstColon(str) {
-        const index = str.indexOf(':');
-        if (index === -1) {
-            return [str, ''];
+
+        if (expression[0] === ')') expression.shift();
+
+        if (exprs.length === 1 && !currentOp) {
+            return exprs[0];
         }
-        const part1 = str.substring(0, index);
-        const part2 = str.substring(index + 1);
-        return [part1, part2];
+
+        return { op: currentOp || 'and', exprs };
     }
 
-    const l = expression.length;
-    for (let i = 0; i < l; i ++) {
-        const c = expression[i];
-        if (c === '(') {
-            op.push(c);
-        } else if (c === ')') {
-            while (op.length && op[op.length - 1] !== '(') eval();
-            op.pop();
-        } else if (c === "and" || c === "or") {
-            while (op.length && pr[op[op.length - 1]] >= pr[c]) eval();
-            op.push(c);
-        } else {
-            const  splitArray =  splitAtFirstColon(c)
-            value.push({
-                key: splitArray[0],
-                value: splitArray[1]
-            });
-        }
-    }
-    while (op.length) eval();
-    return value.pop();
+    return parseGroup();
 }
-let expression = ["k1:v1", "or", "k2:v2"];
+
+// eg.
+// let expression = ["k1:v1", "or", "k2:v2"];                                      √
+// let expression = ["(", "k1:v1", "or", "k2:v2", ")", "and", "k3:v3"];            √
+let expression = ["(", "k1:v1", "or", "k2:v2", ")", "and", "not", "(", "k3:v3", "or", "k4:v4", ")"];
 console.log(expression)
-console.log(JSON.stringify(evalExpression(expression), null, 2));
-expression = ["(", "k1:v1", "or", "k2:v2", ")", "and", "k3:v3"];
-console.log(expression)
-console.log(JSON.stringify(evalExpression(expression), null, 2));
+console.log(JSON.stringify(parseExpression(expression), null, 2));
