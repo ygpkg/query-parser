@@ -55,6 +55,10 @@ function parseExpression(expression) {
 }
 
 // eg .
-// k1:(v1) OR k2:(v2)
-expression = "TIAB:(汽车1) OR TI:(汽车2) AND NOT (ASPS:(汽车3) OR DES:(汽车4))"
+// expression = "k1:(v1)"
+// expression = "(NOT k1:(v1)) AND k2:(v2)"
+// expression = "NOT (k1:(v1) OR k2:(v2))"
+// expression = "k1:(v1) AND ((k2:(v2) OR k3:(v3))"
+// expression = "ANCS:(功) and TA:(智能 医学) AND DESC:(手术)"
+expression = "k1:(v1) OR k2:(v2) AND (NOT k3:(v3) OR k4:(v4)) AND k5:(v5)"
 console.log(JSON.stringify(parseExpression(expression), null, 2))
