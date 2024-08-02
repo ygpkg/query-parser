@@ -1,9 +1,21 @@
 console.log("clearmann answer content: ")
 console.log("***************  start  *********************")
-// 解释下not语句的逻辑
+// 解释下NOT语句的逻辑
 // !(a || b)              ---->   !a && !b
-// not ( k3:v3 or k4:v4 ) ---->   (not k3:v3) and (not k4:v4)
+// !(a && b)              ---->   !a || !b
+// NOT ( k3:v3 OR k4:v4 ) ---->   (NOT k3:v3) AND (NOT k4:v4)
+// NOT ( k3:v3 AND k4:v4 ) ---->   (NOT k3:v3) OR (NOT k4:v4)
 function parseExpression(expression) {
+    function convertStringToArray(input) {
+        const regex = /(\w+:\([\u4e00-\u9fa5a-zA-Z0-9\s]+\))|([()])|(AND|OR|NOT)/g;
+        const matches = input.match(regex);
+        return matches || [];
+    }
+    function extractContent(input) {
+        const regex = /^\((.*)\)$/;
+        const match = input.match(regex);
+        return match ? match[1] : input;
+    }
     function parseGroup(isBool = false) {
         let exprs = [];
         let currentOp = '';
@@ -13,19 +25,20 @@ function parseExpression(expression) {
 
             if (c === '(') {
                 exprs.push(parseGroup(isBool));
-            } else if (c === "and" || c === "or") {
-                let newOp = isBool ? (c === "and" ? "or" : "and") : c;
+            } else if (c === "AND" || c === "OR") {
+                let newOp = isBool ? (c === "AND" ? "OR" : "AND") : c;
                 if (currentOp === '') {
                     currentOp = newOp;
                 } else if (currentOp !== newOp) {
                     exprs = [{ op: currentOp, exprs }];
                     currentOp = newOp;
                 }
-            } else if (c === "not") {
+            } else if (c === "NOT") {
                 exprs.push(parseGroup(true));
             } else {
-                const [key, value] = c.split(':');
-                exprs.push(isBool ? { op: "not", key, value } : { key, value });
+                let [key, value] = c.split(':');
+                value = extractContent(value);
+                exprs.push(isBool ? { op: "NOT", key, value:[value] } : { op: "match", key, value:[value] });
             }
         }
 
@@ -35,15 +48,13 @@ function parseExpression(expression) {
             return exprs[0];
         }
 
-        return { op: currentOp || 'and', exprs };
+        return { op: currentOp || 'AND', exprs };
     }
-
+    expression = convertStringToArray(expression);
     return parseGroup();
 }
 
-// eg.
-// let expression = ["k1:v1", "or", "k2:v2"];                                      √
-// let expression = ["(", "k1:v1", "or", "k2:v2", ")", "and", "k3:v3"];            √
-let expression = ["(", "k1:v1", "or", "k2:v2", ")", "and", "not", "(", "k3:v3", "or", "k4:v4", ")"];
-console.log(expression)
-console.log(JSON.stringify(parseExpression(expression), null, 2));
+// eg .
+// k1:(v1) OR k2:(v2)
+expression = "TIAB:(汽车1) OR TI:(汽车2) AND NOT (ASPS:(汽车3) OR DES:(汽车4))"
+console.log(JSON.stringify(parseExpression(expression), null, 2))
