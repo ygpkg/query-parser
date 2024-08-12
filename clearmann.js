@@ -83,5 +83,8 @@ function parseExpression(expression) {
 // expression = "k1:(v1) AND ((k2:(v2) OR k3:(v3))"
 // expression = "ANCS:(功) and TA:(智能 医学) AND DESC:(手术)"
 // expression = "k1:(v1) OR k2:(v2) AND (NOT k3:(v3) OR k4:(v4)) AND k5:(v5)"
-expression = "k1:(v(1)"
+// expression = "k1:(v1))" // 感觉用户期望检索这个 k1:(v1)  会返回为正确的检索式
+// expression = "k1:(v1) OR"  // 返回 false
+// expression = "k1:(v(1)"  // 返回 false
+expression = "k1:(v:1)"  // 返回 false
 console.log(JSON.stringify(parseExpression(expression), null, 2))
