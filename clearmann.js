@@ -7,6 +7,18 @@ console.log("***************  start  *********************")
 // NOT ( k3:v3 AND k4:v4 ) ---->   (NOT k3:v3) OR (NOT k4:v4)
 function parseExpression(expression, mp) {
 
+    function isChineseEnglishOnly(str) {
+        const regex = /^[\u4e00-\u9fa5a-zA-Z]+$/;
+        return regex.test(str);
+    }
+    function handleArray(array) {
+        for (let i = 0; i < array.length; i++) {
+            if (array[i] === "AND" || array[i] === "OR" || array[i] === "NOT") continue;
+            if (isChineseEnglishOnly(array[i])) array[i] = "ALL:(" + array[i] + ")";
+        }
+        return array;
+    }
+
     function isParseExpression(input) {
         const pattern = /.*?:\(.*?\)/;
         return pattern.test(input);
@@ -14,8 +26,23 @@ function parseExpression(expression, mp) {
 
     function convertStringToArray(input) {
         const regex = /(\w+:\([\u4e00-\u9fa5a-zA-Z0-9\s]+\))|([()])|(AND|OR|NOT)/g;
-        const matches = input.match(regex);
-        return matches || [];
+        const result = [];
+        let lastIndex = 0;
+        let match;
+
+        while ((match = regex.exec(input)) !== null) {
+            if (match.index > lastIndex) {
+                result.push(input.slice(lastIndex, match.index).trim());
+            }
+            result.push(match[0]);
+            lastIndex = regex.lastIndex;
+        }
+
+        if (lastIndex < input.length) {
+            result.push(input.slice(lastIndex).trim());
+        }
+
+        return result.filter(item => item !== '');
     }
 
     function extractContent(input) {
@@ -49,10 +76,14 @@ function parseExpression(expression, mp) {
                 exprs.push(result);
             } else if (c && c.includes(':')) {
                 let [key, value] = c.split(':');
-                if (!mp.has(key)) return false;
-                key = mp.get(key);
                 value = extractContent(value);
-                exprs.push(isBool ? {op: "NOT", key, value: [value]} : {op: "match", key, value: [value]});
+                if (key === "ALL") {
+                    exprs.push(isBool ? {op: "NOT", value: [value]} : {op: "multi_match", value: [value]});
+                } else {
+                    if (!mp.has(key)) return false;
+                    key = mp.get(key);
+                    exprs.push(isBool ? {op: "NOT", key, value: [value]} : {op: "match", key, value: [value]});
+                }
             } else {
                 return false;
             }
@@ -75,18 +106,16 @@ function parseExpression(expression, mp) {
     }
 
     try {
-        if (!isParseExpression(expression)) {
-            return {
-                "op": "multi_match",
-                "value": [
-                    expression
-                ]
-            }
-        }
         expression = convertStringToArray(expression);
         if (expression.length === 0) {
             return false;
         }
+        console.log(expression);
+        expression = handleArray(expression);
+        if (expression.length === 0) {
+            return false;
+        }
+        console.log(expression);
         const result = parseGroup();
         if (expression.length > 0) {
             return false;
@@ -101,6 +130,7 @@ function parseExpression(expression, mp) {
 map = new Map();
 map.set("k1", "v1").set("k2", "v2").set("k3", "v3");
 // expression = "k1:(v1)"
+// expression = "k1:(人工 智能) OR 人工"
 // expression = "(NOT k1:(v1)) AND k2:(v2)"
 // expression = "NOT (k1:(v1) OR k2:(v2))"
 // expression = "k1:(v1) AND ((k2:(v2) OR k3:(v3))"
@@ -111,5 +141,5 @@ map.set("k1", "v1").set("k2", "v2").set("k3", "v3");
 // expression = "k1:(v(1)"  // 返回 false
 // expression = "k1:(v:1)"  // 返回 false
 // expression = "人工:(v1)"  // 如果key不为我们约定的 返回false
-expression = "人工智能"  // 用户不指定字段搜索时，返回全文的分词检索格式
+expression = "人工 NOT 智能"  // 用户不指定字段搜索时，返回全文的分词检索格式
 console.log(JSON.stringify(parseExpression(expression, map), null, 2))
