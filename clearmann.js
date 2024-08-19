@@ -7,10 +7,39 @@ console.log("***************  start  *********************")
 // NOT ( k3:v3 AND k4:v4 ) ---->   (NOT k3:v3) OR (NOT k4:v4)
 function parseExpression(expression, mp) {
 
+    function checkBracketIntegrity(expression) {
+        let mp = {'(': ')', '[': ']', '{': '}'}
+        let x = []
+        let last = false;
+        let ex = ""
+        let firstMp = false;
+        for (let i = 0; i < expression.length; i++) {
+            if (firstMp) {
+                ex = ex + expression[i];
+            }
+            if (expression[i] === '(' || expression[i] === '[' || expression[i] === '{') {
+                x.push(expression[i]);
+                last = true;
+                firstMp = true;
+                continue;
+            }
+            if (expression[i] === ')' || expression[i] === ']' || expression[i] === '}') {
+                if (x.length === 0) return false;
+                let p = x.pop();
+                if (mp[p] !== expression[i]) return false;
+                if (mp[p] === expression[i] && last) return false;
+            }
+            last = false;
+        }
+        if (isParseExpression(ex)) return false;
+        return x.length === 0;
+    }
+
     function isChineseEnglishOnly(str) {
         const regex = /^[\u4e00-\u9fa5a-zA-Z]+$/;
         return regex.test(str);
     }
+
     function handleArray(array) {
         for (let i = 0; i < array.length; i++) {
             if (array[i] === "AND" || array[i] === "OR" || array[i] === "NOT") continue;
@@ -20,7 +49,7 @@ function parseExpression(expression, mp) {
     }
 
     function isParseExpression(input) {
-        const pattern = /.*?:\(.*?\)/;
+        const pattern = /.*?:\(.*?\).*?/;
         return pattern.test(input);
     }
 
@@ -106,16 +135,15 @@ function parseExpression(expression, mp) {
     }
 
     try {
+        if (!checkBracketIntegrity(expression)) return false;
         expression = convertStringToArray(expression);
         if (expression.length === 0) {
             return false;
         }
-        console.log(expression);
         expression = handleArray(expression);
         if (expression.length === 0) {
             return false;
         }
-        console.log(expression);
         const result = parseGroup();
         if (expression.length > 0) {
             return false;
@@ -136,10 +164,11 @@ map.set("k1", "v1").set("k2", "v2").set("k3", "v3");
 // expression = "k1:(v1) AND ((k2:(v2) OR k3:(v3))"
 // expression = "ANCS:(功) and TA:(智能 医学) AND DESC:(手术)"
 // expression = "k1:(v1) OR k2:(v2) AND (NOT k3:(v3) OR k4:(v4)) AND k5:(v5)"
-// expression = "k1:(v1))" // 感觉用户期望检索这个 k1:(v1)  会返回为正确的检索式
+expression = "k1:(v1))" // 括号不匹配 返回false
+expression = "k1:(k2:(v2))" // 检索式嵌套 返回false
 // expression = "k1:(v1) OR"  // 返回 false
 // expression = "k1:(v(1)"  // 返回 false
 // expression = "k1:(v:1)"  // 返回 false
 // expression = "人工:(v1)"  // 如果key不为我们约定的 返回false
-expression = "人工 NOT 智能"  // 用户不指定字段搜索时，返回全文的分词检索格式
+// expression = "人工 NOT 智能"  // 用户不指定字段搜索时，返回全文的分词检索格式
 console.log(JSON.stringify(parseExpression(expression, map), null, 2))
