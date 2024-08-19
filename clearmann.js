@@ -11,10 +11,16 @@ function parseExpression(expression, mp) {
         let mp = {'(': ')', '[': ']', '{': '}'}
         let x = []
         let last = false;
+        let ex = ""
+        let firstMp = false;
         for (let i = 0; i < expression.length; i++) {
+            if (firstMp) {
+                ex = ex + expression[i];
+            }
             if (expression[i] === '(' || expression[i] === '[' || expression[i] === '{') {
                 x.push(expression[i]);
                 last = true;
+                firstMp = true;
                 continue;
             }
             if (expression[i] === ')' || expression[i] === ']' || expression[i] === '}') {
@@ -25,6 +31,7 @@ function parseExpression(expression, mp) {
             }
             last = false;
         }
+        if (isParseExpression(ex)) return false;
         return x.length === 0;
     }
 
@@ -42,7 +49,7 @@ function parseExpression(expression, mp) {
     }
 
     function isParseExpression(input) {
-        const pattern = /.*?:\(.*?\)/;
+        const pattern = /.*?:\(.*?\).*?/;
         return pattern.test(input);
     }
 
@@ -133,12 +140,10 @@ function parseExpression(expression, mp) {
         if (expression.length === 0) {
             return false;
         }
-        console.log(expression);
         expression = handleArray(expression);
         if (expression.length === 0) {
             return false;
         }
-        console.log(expression);
         const result = parseGroup();
         if (expression.length > 0) {
             return false;
@@ -159,7 +164,8 @@ map.set("k1", "v1").set("k2", "v2").set("k3", "v3");
 // expression = "k1:(v1) AND ((k2:(v2) OR k3:(v3))"
 // expression = "ANCS:(功) and TA:(智能 医学) AND DESC:(手术)"
 // expression = "k1:(v1) OR k2:(v2) AND (NOT k3:(v3) OR k4:(v4)) AND k5:(v5)"
-expression = "k1:(v1))" // 括号不匹配返回false
+expression = "k1:(v1))" // 括号不匹配 返回false
+expression = "k1:(k2:(v2))" // 检索式嵌套 返回false
 // expression = "k1:(v1) OR"  // 返回 false
 // expression = "k1:(v(1)"  // 返回 false
 // expression = "k1:(v:1)"  // 返回 false
