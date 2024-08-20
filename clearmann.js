@@ -31,7 +31,6 @@ function parseExpression(expression, mp) {
             }
             last = false;
         }
-        if (isParseExpression(ex)) return false;
         return x.length === 0;
     }
 
@@ -48,13 +47,26 @@ function parseExpression(expression, mp) {
         return array;
     }
 
+    function splitByFirstColon(input) {
+        const colonIndex = input.indexOf(':');
+        if (colonIndex === -1) {
+            return [input, ''];
+        } else {
+            return [
+                input.slice(0, colonIndex),
+                input.slice(colonIndex + 1)
+            ];
+        }
+    }
+
     function isParseExpression(input) {
         const pattern = /.*?:\(.*?\).*?/;
         return pattern.test(input);
     }
 
+    // k1:(k2:(v2)) -> [ 'k1', ':', '(k2:(v2))' ]
     function convertStringToArray(input) {
-        const regex = /(\w+:\([\u4e00-\u9fa5a-zA-Z0-9\s]+\))|([()])|(AND|OR|NOT)/g;
+        const regex = /(\w+:\([^()]*(?:\([^()]*\)[^()]*)*\))|([()])|(AND|OR|NOT)/g;
         const result = [];
         let lastIndex = 0;
         let match;
@@ -104,8 +116,9 @@ function parseExpression(expression, mp) {
                 if (result === false) return false;
                 exprs.push(result);
             } else if (c && c.includes(':')) {
-                let [key, value] = c.split(':');
+                let [key, value] = splitByFirstColon(c);
                 value = extractContent(value);
+                if (isParseExpression(value)) return false;
                 if (key === "ALL") {
                     exprs.push(isBool ? {op: "NOT", value: [value]} : {op: "multi_match", value: [value]});
                 } else {
@@ -136,18 +149,22 @@ function parseExpression(expression, mp) {
 
     try {
         if (!checkBracketIntegrity(expression)) return false;
+        console.log("checkBracketIntegrity");
         expression = convertStringToArray(expression);
         if (expression.length === 0) {
             return false;
         }
+        console.log("convertStringToArray，resp: ", expression);
         expression = handleArray(expression);
         if (expression.length === 0) {
             return false;
         }
+        console.log("handleArray, resp : ", expression);
         const result = parseGroup();
         if (expression.length > 0) {
             return false;
         }
+        console.log("parseGroup")
         return result;
     } catch (error) {
         return false;
@@ -156,19 +173,21 @@ function parseExpression(expression, mp) {
 
 // eg .
 map = new Map();
-map.set("k1", "v1").set("k2", "v2").set("k3", "v3");
+map.set("k1", "v1").set("k2", "v2").set("k3", "v3").set("k4", "v4").set("k5", "v5");
 // expression = "k1:(v1)"
+// expression = "k1:(k2:(v2))"
 // expression = "k1:(人工 智能) OR 人工"
 // expression = "(NOT k1:(v1)) AND k2:(v2)"
 // expression = "NOT (k1:(v1) OR k2:(v2))"
-// expression = "k1:(v1) AND ((k2:(v2) OR k3:(v3))"
+// expression = "k1:(v1) AND (k2:(v2) OR k3:(v3))"
 // expression = "ANCS:(功) and TA:(智能 医学) AND DESC:(手术)"
 // expression = "k1:(v1) OR k2:(v2) AND (NOT k3:(v3) OR k4:(v4)) AND k5:(v5)"
-expression = "k1:(v1))" // 括号不匹配 返回false
-expression = "k1:(k2:(v2))" // 检索式嵌套 返回false
+// expression = "k1:(v1))" // 括号不匹配 返回false
+// expression = "k1:(k2:(v2))" // 检索式嵌套 返回false
 // expression = "k1:(v1) OR"  // 返回 false
 // expression = "k1:(v(1)"  // 返回 false
-// expression = "k1:(v:1)"  // 返回 false
+// expression = "k1:(v1)"  // 返回 false
 // expression = "人工:(v1)"  // 如果key不为我们约定的 返回false
-// expression = "人工 NOT 智能"  // 用户不指定字段搜索时，返回全文的分词检索格式
+expression = "人工 NOT 智能"  // 用户不指定字段搜索时，返回全文的分词检索格式
+console.log(expression)
 console.log(JSON.stringify(parseExpression(expression, map), null, 2))
