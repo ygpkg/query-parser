@@ -1,5 +1,3 @@
-console.log("clearmann answer content: ");
-console.log("***************  start  *********************");
 // 解释下NOT语句的逻辑
 // !(a || b)              ---->   !a && !b
 // !(a && b)              ---->   !a || !b
@@ -53,7 +51,7 @@ function parseExpression(expression, mp) {
   }
 
   function isChineseEnglishOnly(str) {
-    const regex = /^[\u4e00-\u9fa5a-zA-Z0-9]+$/;
+    const regex = /^[\u4e00-\u9fa5a-zA-Z0-9?*]+$/;
     return regex.test(str);
   }
 
@@ -109,7 +107,6 @@ function parseExpression(expression, mp) {
 
     while (expression.length > 0 && expression[0] !== ")") {
       const c = expression.shift();
-
       if (c === "(") {
         const result = parseGroup(isBool);
         if (result === false) return false;
@@ -128,6 +125,7 @@ function parseExpression(expression, mp) {
         exprs.push(result);
       } else if (c && c.includes(":")) {
         let [key, value] = splitByFirstColon(c);
+        console.log(key, value);
         value = extractContent(value);
         if (isParseExpression(value)) return false;
         console.log(key, value);
@@ -205,10 +203,10 @@ const map = new Map();
 map
   .set("DOCN", "document_number")
   .set("APN", "application_number")
-  .set("k3", "v3")
+  .set("k1", "k1")
   .set("k4", "v4")
   .set("k5", "v5");
-// expression = "k1:(v*1)"
+expression = "k1:(v?1)";
 // expression = "k1:(k2:(v2))"
 // expression = "k1:(人工 智能) OR 人工"
 // expression = "(NOT k1:(v1)) AND k2:(v2)"
@@ -223,6 +221,6 @@ map
 // expression = "k1:(v1)"  // 返回 false
 // expression = "人工:(v1)"  // 如果key不为我们约定的 返回false
 // expression = "CN202010379503.X"; // 用户不指定字段搜索时，返回全文的分词检索格式
-expression = "人?智能";
+// expression = "人工*能";
 console.log(expression);
 console.log(JSON.stringify(parseExpression(expression, map), null, 2));
