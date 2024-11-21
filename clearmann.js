@@ -74,25 +74,76 @@ function parseExpression(expression, mp) {
     return pattern.test(input);
   }
 
+  // function convertStringToArray(input) {
+  //   const regex = /(\w+:\([^()]*(?:\([^()]*\)[^()]*)*\))|([()])|(AND|OR|NOT)/g;
+  //   const result = [];
+  //   let lastIndex = 0;
+  //   let match;
+
+  //   while ((match = regex.exec(input)) !== null) {
+  //     if (match.index > lastIndex) {
+  //       result.push(input.slice(lastIndex, match.index).trim());
+  //     }
+  //     result.push(match[0]);
+  //     lastIndex = regex.lastIndex;
+  //   }
+
+  //   if (lastIndex < input.length) {
+  //     result.push(input.slice(lastIndex).trim());
+  //   }
+
+  //   return result.filter((item) => item !== "");
+  // }
+
   function convertStringToArray(input) {
-    const regex = /(\w+:\([^()]*(?:\([^()]*\)[^()]*)*\))|([()])|(AND|OR|NOT)/g;
+    // 步骤1: 首先处理字段限定符(如TIT:)
+    const fieldPattern = /(\w+:\([^()]*(?:\([^()]*\)[^()]*)*\))/g;
+    const operators = /(AND|OR|NOT)/g;
+
+    // 步骤2: 临时替换字段表达式，避免被分割
+    let tempInput = input;
+    const fieldExpressions = [];
+    let fieldMatch;
+
+    while ((fieldMatch = fieldPattern.exec(input)) !== null) {
+      const placeholder = `__FIELD${fieldExpressions.length}__`;
+      tempInput = tempInput.replace(fieldMatch[0], placeholder);
+      fieldExpressions.push(fieldMatch[0]);
+    }
+
+    // 步骤3: 分割操作符和词语
+    const parts = tempInput
+      .split(operators)
+      .map((part) => part.trim())
+      .filter(Boolean);
+
+    // 步骤4: 处理结果数组
     const result = [];
-    let lastIndex = 0;
-    let match;
-
-    while ((match = regex.exec(input)) !== null) {
-      if (match.index > lastIndex) {
-        result.push(input.slice(lastIndex, match.index).trim());
+    for (let part of parts) {
+      if (part === "AND" || part === "OR" || part === "NOT") {
+        result.push(part);
+      } else {
+        // 检查是否是字段占位符
+        if (part.startsWith("__FIELD")) {
+          const index = parseInt(part.match(/\d+/)[0]);
+          result.push(fieldExpressions[index]);
+        } else {
+          // 处理普通词语
+          const words = part.split(/\s+/).filter(Boolean);
+          for (let i = 0; i < words.length; i++) {
+            if (i > 0 && result[result.length - 1] !== "AND") {
+              result.push("AND");
+            }
+            // 为没有字段限定的词添加ALL:前缀
+            result.push(
+              words[i].includes(":") ? words[i] : `ALL:(${words[i]})`
+            );
+          }
+        }
       }
-      result.push(match[0]);
-      lastIndex = regex.lastIndex;
     }
 
-    if (lastIndex < input.length) {
-      result.push(input.slice(lastIndex).trim());
-    }
-
-    return result.filter((item) => item !== "");
+    return result;
   }
 
   function extractContent(input) {
@@ -169,29 +220,34 @@ function parseExpression(expression, mp) {
   }
 
   try {
+    // 查看是否为有效的中国专利号
     if (isValidChinesePatentNumber(expression)) {
       expression = `DOCN:(${expression})`;
     }
+    // 查看是否为有效的申请号
     if (isValidApplicationNumber(expression)) {
       expression = `APN:(${expression})`;
     }
+    // 查看括号匹配是否符合
     if (!checkBracketIntegrity(expression)) return false;
     console.log("括号匹配成功");
+    // 将字符串处理为数组
     expression = convertStringToArray(expression);
     if (expression.length === 0) {
       return false;
     }
-    console.log("convertStringToArray，resp: ", expression);
+    console.log("将字符串处理为数组: ", expression);
     expression = handleArray(expression);
     if (expression.length === 0) {
       return false;
     }
-    console.log("handleArray, resp : ", expression);
+
+    console.log("对生成的数组进行处理: ", expression);
     const result = parseGroup();
     if (expression.length > 0) {
       return false;
     }
-    console.log("parseGroup");
+    console.log("解析结果: ", result);
     return result;
   } catch (error) {
     return false;
@@ -206,7 +262,8 @@ map
   .set("k1", "k1")
   .set("k4", "v4")
   .set("k5", "v5");
-expression = "k1:(v?1)";
+expression = "a b c d";
+// expression = "k1:(v?1)";
 // expression = "k1:(k2:(v2))"
 // expression = "k1:(人工 智能) OR 人工"
 // expression = "(NOT k1:(v1)) AND k2:(v2)"
