@@ -9,11 +9,13 @@ function parseExpression(expression, mp) {
     const regex = /^\d{4}\d{1}\d{7}\.\d{1}|X$/;
     return regex.test(input);
   }
+
   // 查看是否为有效的中国专利号
   function isValidChinesePatentNumber(input) {
     const regex = /^CN\d{1}\d{8}[A-Za-z](\d)?$/;
     return regex.test(input);
   }
+
   // 查看括号匹配是否符合
   function checkBracketIntegrity(expression) {
     const brackets = { "(": ")", "[": "]", "{": "}" };
@@ -87,54 +89,63 @@ function parseExpression(expression, mp) {
   }
 
   function convertStringToArray(input) {
-    // 步骤1: 首先处理字段限定符(如TIT:)
-    const fieldPattern = /(\w+:\([^()]*\))/g;
-
-    // 步骤2: 临时替换字段表达式
-    let tempInput = input;
-    const fieldExpressions = [];
-    let fieldMatch;
-
-    while ((fieldMatch = fieldPattern.exec(input)) !== null) {
-      const placeholder = `__FIELD${fieldExpressions.length}__`;
-      tempInput = tempInput.replace(fieldMatch[0], placeholder);
-      fieldExpressions.push(fieldMatch[0]);
+    if (!input || typeof input !== "string") {
+      return [];
     }
 
-    // 步骤3: 分割字符串
-    const parts = tempInput
-      .split(/\s+/)
-      .filter(Boolean)
-      .map((part) => part.trim());
+    // 处理空格分隔的简单字符串
+    if (!input.includes(":") && !input.includes("(") && !input.includes(")")) {
+      return input
+        .split(/\s+/)
+        .filter((word) => word.length > 0)
+        .map((word) => word.trim());
+    }
 
-    // 步骤4: 处理结果数组
+    // 处理复杂表达式
+    const regex = /(\w+:\([^()]*(?:\([^()]*\)[^()]*)*\))|([()])|(AND|OR|NOT)/g;
     const result = [];
-    for (let i = 0; i < parts.length; i++) {
-      const part = parts[i];
+    let lastIndex = 0;
+    let match;
 
-      if (part === "AND" || part === "OR" || part === "NOT") {
-        result.push(part);
-        continue;
-      }
-
-      if (part.startsWith("__FIELD")) {
-        const index = parseInt(part.match(/\d+/)[0]);
-        result.push(fieldExpressions[index]);
-
-        // 如果不是最后一个元素，且下一个不是操作符，添加 AND
-        if (
-          i < parts.length - 1 &&
-          !["AND", "OR", "NOT"].includes(parts[i + 1])
-        ) {
-          result.push("AND");
+    // 处理匹配项
+    while ((match = regex.exec(input)) !== null) {
+      // 处理匹配项之前的文本
+      if (match.index > lastIndex) {
+        const text = input.slice(lastIndex, match.index).trim();
+        if (text) {
+          // 将空格分隔的文本拆分为单独的词
+          const words = text.split(/\s+/).filter((word) => word.length > 0);
+          result.push(...words);
         }
-      } else {
-        // 处理普通词语
-        result.push(part.includes(":") ? part : `ALL:(${part})`);
+      }
+      result.push(match[0]);
+      lastIndex = regex.lastIndex;
+    }
+
+    // 处理剩余文本
+    if (lastIndex < input.length) {
+      const remainingText = input.slice(lastIndex).trim();
+      if (remainingText) {
+        const words = remainingText
+          .split(/\s+/)
+          .filter((word) => word.length > 0);
+        result.push(...words);
       }
     }
 
-    return result;
+    // 在相邻的非操作符之间添加 AND
+    for (let i = 0; i < result.length - 1; i++) {
+      const operators = ["AND", "OR", "NOT", "(", ")"];
+      if (
+        !operators.includes(result[i]) &&
+        !operators.includes(result[i + 1])
+      ) {
+        result.splice(i + 1, 0, "AND");
+        i++;
+      }
+    }
+
+    return result.filter((item) => item !== "");
   }
 
   function extractContent(input) {
@@ -255,25 +266,30 @@ map
   .set("k2", "v2")
   .set("k3", "v3")
   .set("k4", "v4")
-  .set("k5", "v5");
+  .set("k5", "v5")
+  .set("ANCS", "ANCS")
+  .set("TA", "TA")
+  .set("DESC", "DESC");
+
+// 正确返回的结果
 expression = "123 45";
-// expression = "a b c d";
-// expression = "k1:(v?1)";
-// expression = "k1:(k2:(v2))"
+expression = "a b c d";
+expression = "k1:(v?1)";
 expression = "k1:(人工 智能) OR 人 工";
-// expression = "k1:(v1 v2) AND k3:(v3 v4) k5:(v5v6)";
-// expression = "(NOT k1:(v1)) AND k2:(v2)"
-// expression = "NOT (k1:(v1) OR k2:(v2))"
-// expression = "k1:(v1) AND (k2:(v2) OR k3:(v3))"
-// expression = "ANCS:(功) and TA:(智能 医学) AND DESC:(手术)"
-// expression = "k1:(v1) OR k2:(v2) AND (NOT k3:(v3) OR k4:(v4)) AND k5:(v5)"
-// expression = "k1:(v1))" // 括号不匹配 返回false
-// expression = "k1:(k2:(v2))" // 检索式嵌套 返回false
-// expression = "k1:(v1) OR"  // 返回 false
-// expression = "k1:(v(1)"  // 返回 false
-// expression = "k1:(v1)"  // 返回 false
-// expression = "人工:(v1)"  // 如果key不为我们约定的 返回false
-// expression = "CN202010379503.X"; // 用户不指定字段搜索时，返回全文的分词检索格式
-// expression = "人工*能";
+expression = "k1:(v1 v2) AND k3:(v3 v4) k5:(v5v6)";
+expression = "ANCS:(功) AND TA:(智能 医学) AND DESC:(手术)";
+expression = "k1:(v1))"; // 括号不匹配 返回false
+expression = "k1:(k2:(v2))"; // 检索式嵌套 返回false
+expression = "k1:(v1) OR"; // 返回 false
+expression = "k1:(v(1)"; // 返回 false
+expression = "k1:(v1)";
+expression = "人工:(v1)"; // 如果key不为我们约定的 返回false
+expression = "CN202010379503.X"; // 用户不指定字段搜索时，返回全文的分词检索格式
+expression = "人工*能";
+expression = "(NOT k1:(v1)) AND k2:(v2)";
+expression = "NOT (k1:(v1) OR k2:(v2))";
+expression = "k1:(v1) AND (k2:(v2) OR k3:(v3))";
+expression = "k1:(v1) OR k2:(v2) AND (NOT k3:(v3) OR k4:(v4)) AND k5:(v5)";
+// 未能正确返回结果的
 console.log(expression);
 console.log(JSON.stringify(parseExpression(expression, map), null, 2));
