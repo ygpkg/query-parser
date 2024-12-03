@@ -16,7 +16,7 @@ function parseExpression(expression, mp) {
   }
   // 查看括号匹配是否符合
   function checkBracketIntegrity(expression) {
-    const mp = { "(": ")", "[": "]", "{": "}" };
+    const brackets = { "(": ")", "[": "]", "{": "}" };
     const stack = [];
     let last = false;
     let ex = "";
@@ -42,8 +42,8 @@ function parseExpression(expression, mp) {
       ) {
         if (stack.length === 0) return false;
         const p = stack.pop();
-        if (mp[p] !== expression[i]) return false;
-        if (mp[p] === expression[i] && last) return false;
+        if (brackets[p] !== expression[i]) return false;
+        if (brackets[p] === expression[i] && last) return false;
       }
       last = false;
     }
@@ -70,37 +70,27 @@ function parseExpression(expression, mp) {
   }
 
   function isParseExpression(input) {
-    const pattern = /.*?:\(.*?\).*?/;
-    return pattern.test(input);
+    const parts = input.split(":");
+    if (parts.length < 2) return false;
+
+    const key = parts[0];
+    const value = parts.slice(1).join(":");
+
+    const openParenIndex = value.indexOf("(");
+    const closeParenIndex = value.indexOf(")");
+
+    return (
+      openParenIndex !== -1 &&
+      closeParenIndex !== -1 &&
+      openParenIndex < closeParenIndex
+    );
   }
-
-  // function convertStringToArray(input) {
-  //   const regex = /(\w+:\([^()]*(?:\([^()]*\)[^()]*)*\))|([()])|(AND|OR|NOT)/g;
-  //   const result = [];
-  //   let lastIndex = 0;
-  //   let match;
-
-  //   while ((match = regex.exec(input)) !== null) {
-  //     if (match.index > lastIndex) {
-  //       result.push(input.slice(lastIndex, match.index).trim());
-  //     }
-  //     result.push(match[0]);
-  //     lastIndex = regex.lastIndex;
-  //   }
-
-  //   if (lastIndex < input.length) {
-  //     result.push(input.slice(lastIndex).trim());
-  //   }
-
-  //   return result.filter((item) => item !== "");
-  // }
 
   function convertStringToArray(input) {
     // 步骤1: 首先处理字段限定符(如TIT:)
-    const fieldPattern = /(\w+:\([^()]*(?:\([^()]*\)[^()]*)*\))/g;
-    const operators = /(AND|OR|NOT)/g;
+    const fieldPattern = /(\w+:\([^()]*\))/g;
 
-    // 步骤2: 临时替换字段表达式，避免被分割
+    // 步骤2: 临时替换字段表达式
     let tempInput = input;
     const fieldExpressions = [];
     let fieldMatch;
@@ -111,35 +101,36 @@ function parseExpression(expression, mp) {
       fieldExpressions.push(fieldMatch[0]);
     }
 
-    // 步骤3: 分割操作符和词语
+    // 步骤3: 分割字符串
     const parts = tempInput
-      .split(operators)
-      .map((part) => part.trim())
-      .filter(Boolean);
+      .split(/\s+/)
+      .filter(Boolean)
+      .map((part) => part.trim());
 
     // 步骤4: 处理结果数组
     const result = [];
-    for (let part of parts) {
+    for (let i = 0; i < parts.length; i++) {
+      const part = parts[i];
+
       if (part === "AND" || part === "OR" || part === "NOT") {
         result.push(part);
-      } else {
-        // 检查是否是字段占位符
-        if (part.startsWith("__FIELD")) {
-          const index = parseInt(part.match(/\d+/)[0]);
-          result.push(fieldExpressions[index]);
-        } else {
-          // 处理普通词语
-          const words = part.split(/\s+/).filter(Boolean);
-          for (let i = 0; i < words.length; i++) {
-            if (i > 0 && result[result.length - 1] !== "AND") {
-              result.push("AND");
-            }
-            // 为没有字段限定的词添加ALL:前缀
-            result.push(
-              words[i].includes(":") ? words[i] : `ALL:(${words[i]})`
-            );
-          }
+        continue;
+      }
+
+      if (part.startsWith("__FIELD")) {
+        const index = parseInt(part.match(/\d+/)[0]);
+        result.push(fieldExpressions[index]);
+
+        // 如果不是最后一个元素，且下一个不是操作符，添加 AND
+        if (
+          i < parts.length - 1 &&
+          !["AND", "OR", "NOT"].includes(parts[i + 1])
+        ) {
+          result.push("AND");
         }
+      } else {
+        // 处理普通词语
+        result.push(part.includes(":") ? part : `ALL:(${part})`);
       }
     }
 
@@ -147,9 +138,10 @@ function parseExpression(expression, mp) {
   }
 
   function extractContent(input) {
-    const regex = /^\((.*)\)$/;
-    const match = input.match(regex);
-    return match ? match[1] : input;
+    if (input.startsWith("(") && input.endsWith(")")) {
+      return input.slice(1, -1);
+    }
+    return input;
   }
 
   function parseGroup(isBool = false) {
@@ -260,12 +252,16 @@ map
   .set("DOCN", "document_number")
   .set("APN", "application_number")
   .set("k1", "k1")
+  .set("k2", "v2")
+  .set("k3", "v3")
   .set("k4", "v4")
   .set("k5", "v5");
-expression = "a b c d";
+expression = "123 45";
+// expression = "a b c d";
 // expression = "k1:(v?1)";
 // expression = "k1:(k2:(v2))"
-// expression = "k1:(人工 智能) OR 人工"
+expression = "k1:(人工 智能) OR 人 工";
+// expression = "k1:(v1 v2) AND k3:(v3 v4) k5:(v5v6)";
 // expression = "(NOT k1:(v1)) AND k2:(v2)"
 // expression = "NOT (k1:(v1) OR k2:(v2))"
 // expression = "k1:(v1) AND (k2:(v2) OR k3:(v3))"
