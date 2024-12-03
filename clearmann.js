@@ -190,6 +190,9 @@ function parseExpression(expression, mp) {
               : { op: "multi_match", value: [value] }
           );
         } else {
+          // 转移到patent-web项目时候，改掉has和get方法
+          // if (!mp[key]) return false;
+          // key = mp[key];
           if (!mp.has(key)) return false;
           key = mp.get(key);
           exprs.push(
@@ -269,12 +272,12 @@ map
   .set("k5", "v5")
   .set("ANCS", "ANCS")
   .set("TA", "TA")
-  .set("DESC", "DESC");
+  .set("DESC", "DESC")
+  .set("TIT", "ALL");
 
 // 正确返回的结果
 expression = "123 45";
 expression = "a b c d";
-expression = "k1:(v?1)";
 expression = "k1:(人工 智能) OR 人 工";
 expression = "k1:(v1 v2) AND k3:(v3 v4) k5:(v5v6)";
 expression = "ANCS:(功) AND TA:(智能 医学) AND DESC:(手术)";
@@ -290,6 +293,7 @@ expression = "(NOT k1:(v1)) AND k2:(v2)";
 expression = "NOT (k1:(v1) OR k2:(v2))";
 expression = "k1:(v1) AND (k2:(v2) OR k3:(v3))";
 expression = "k1:(v1) OR k2:(v2) AND (NOT k3:(v3) OR k4:(v4)) AND k5:(v5)";
+expression = "TIT:(123)";
 // 未能正确返回结果的
 console.log(expression);
 console.log(JSON.stringify(parseExpression(expression, map), null, 2));
