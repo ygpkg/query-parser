@@ -4,6 +4,11 @@
 // NOT ( k3:v3 OR k4:v4 ) ---->   (NOT k3:v3) AND (NOT k4:v4)
 // NOT ( k3:v3 AND k4:v4 ) ---->   (NOT k3:v3) OR (NOT k4:v4)
 function parseExpression(expression, mp) {
+  function convertChinesePunctuation(input) {
+    return input.replace(/？/g, '?')
+        .replace(/（/g, '(')
+        .replace(/）/g, ')');
+  }
   // 查看是否为有效的申请号
   function isValidApplicationNumber(input) {
     const regex = /^\d{4}\d{1}\d{7}\.\d{1}|X$/;
@@ -226,6 +231,8 @@ function parseExpression(expression, mp) {
   }
 
   try {
+    // 将中文的括号和问号转化为英文的问号和括号
+    expression = convertChinesePunctuation(expression)
     // 查看是否为有效的中国专利号
     if (isValidChinesePatentNumber(expression)) {
       expression = `DOCN:(${expression})`;
@@ -278,22 +285,22 @@ map
 // 正确返回的结果
 expression = "123 45";
 expression = "a b c d";
-expression = "k1:(人工 智能) OR 人 工";
-expression = "k1:(v1 v2) AND k3:(v3 v4) k5:(v5v6)";
-expression = "ANCS:(功) AND TA:(智能 医学) AND DESC:(手术)";
-expression = "k1:(v1))"; // 括号不匹配 返回false
-expression = "k1:(k2:(v2))"; // 检索式嵌套 返回false
-expression = "k1:(v1) OR"; // 返回 false
-expression = "k1:(v(1)"; // 返回 false
-expression = "k1:(v1)";
-expression = "人工:(v1)"; // 如果key不为我们约定的 返回false
-expression = "CN202010379503.X"; // 用户不指定字段搜索时，返回全文的分词检索格式
-expression = "人工*能";
-expression = "(NOT k1:(v1)) AND k2:(v2)";
-expression = "NOT (k1:(v1) OR k2:(v2))";
-expression = "k1:(v1) AND (k2:(v2) OR k3:(v3))";
-expression = "k1:(v1) OR k2:(v2) AND (NOT k3:(v3) OR k4:(v4)) AND k5:(v5)";
-expression = "TIT:(123)";
+expression = "k1:（人工 智能) OR 人 工";
+// expression = "k1:(v1 v2) AND k3:(v3 v4) k5:(v5v6)";
+// expression = "ANCS:(功) AND TA:(智能 医学) AND DESC:(手术)";
+// expression = "k1:(v1))"; // 括号不匹配 返回false
+// expression = "k1:(k2:(v2))"; // 检索式嵌套 返回false
+// expression = "k1:(v1) OR"; // 返回 false
+// expression = "k1:(v(1)"; // 返回 false
+// expression = "k1:(v1)";
+// expression = "人工:(v1)"; // 如果key不为我们约定的 返回false
+// expression = "CN202010379503.X"; // 用户不指定字段搜索时，返回全文的分词检索格式
+expression = "人工？能";
+// expression = "(NOT k1:(v1)) AND k2:(v2)";
+// expression = "NOT (k1:(v1) OR k2:(v2))";
+// expression = "k1:(v1) AND (k2:(v2) OR k3:(v3))";
+// expression = "k1:(v1) OR k2:(v2) AND (NOT k3:(v3) OR k4:(v4)) AND k5:(v5)";
+// expression = "TIT:(123)";
 // 未能正确返回结果的
 console.log(expression);
 console.log(JSON.stringify(parseExpression(expression, map), null, 2));
