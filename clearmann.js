@@ -4,6 +4,7 @@
 // NOT ( k3:v3 OR k4:v4 ) ---->   (NOT k3:v3) AND (NOT k4:v4)
 // NOT ( k3:v3 AND k4:v4 ) ---->   (NOT k3:v3) OR (NOT k4:v4)
 function parseExpression(expression, mp) {
+  // 将中文的（）？转化为英文的()?
   function convertChinesePunctuation(input) {
     return input.replace(/？/g, '?')
         .replace(/（/g, '(')
@@ -56,12 +57,12 @@ function parseExpression(expression, mp) {
     }
     return stack.length === 0;
   }
-
+  // 查看是否只为中文或者英文
   function isChineseEnglishOnly(str) {
     const regex = /^[\u4e00-\u9fa5a-zA-Z0-9?*]+$/;
     return regex.test(str);
   }
-
+  // 处理数组
   function handleArray(array) {
     return array.map((item) => {
       if (item === "AND" || item === "OR" || item === "NOT") return item;
@@ -160,6 +161,7 @@ function parseExpression(expression, mp) {
     return input;
   }
 
+  // 对生成的数组进行处理
   function parseGroup(isBool = false) {
     let exprs = [];
     let currentOp = "";
@@ -200,11 +202,16 @@ function parseExpression(expression, mp) {
           // key = mp[key];
           if (!mp.has(key)) return false;
           key = mp.get(key);
-          exprs.push(
-            isBool
-              ? { op: "NOT", key, value: [value] }
-              : { op: "match", key, value: [value] }
-          );
+          let valueArray = []
+          let op = ""
+          if (value.includes("to")) {
+            valueArray = value.split(" to ");
+            op = "range";
+          } else {
+            valueArray = [value];
+            op = isBool ? "NOT" : "term";
+          }
+          exprs.push({ op, key, value: valueArray });
         }
       } else {
         return false;
@@ -280,7 +287,8 @@ map
   .set("ANCS", "ANCS")
   .set("TA", "TA")
   .set("DESC", "DESC")
-  .set("TIT", "ALL");
+  .set("TIT", "ALL")
+  .set("DOCN", "document_date");
 
 // 正确返回的结果
 expression = "123 45";
@@ -301,6 +309,7 @@ expression = "人工？能";
 // expression = "k1:(v1) AND (k2:(v2) OR k3:(v3))";
 // expression = "k1:(v1) OR k2:(v2) AND (NOT k3:(v3) OR k4:(v4)) AND k5:(v5)";
 // expression = "TIT:(123)";
+expression = "DOCN:(2021 to 2024) AND k2:(v2)";
 // 未能正确返回结果的
 console.log(expression);
 console.log(JSON.stringify(parseExpression(expression, map), null, 2));
