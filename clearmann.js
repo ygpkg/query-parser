@@ -208,22 +208,29 @@ function parseExpression(expression, mp) {
           let valueArray = []
           let op = ""
           if (value.includes("TO")) {
-            valueArray = value.split(" TO ");
+            valueArray = value.split("TO");
+            for (let i = 0; i < valueArray.length; i++) {
+              valueArray[i] = valueArray[i].replace(" ", "");
+            }
             op = "range";
           } else if (value.includes(">=")) {
-            value = value.replace(">= ","")
+            value = value.replace(">=","")
+            value = value.replace(" ","")
             valueArray = [value]
             op = "gte";
           } else if (value.includes(">")) {
-            value = value.replace("> ","")
+            value = value.replace(">","")
+            value = value.replace(" ","")
             valueArray = [value]
             op = "gt";
           } else if (value.includes("<=")) {
-            value = value.replace("<= ","")
+            value = value.replace("<=","")
+            value = value.replace(" ","")
             valueArray = [value]
             op = "lte";
           } else if (value.includes("<")) {
-            value = value.replace("< ","")
+            value = value.replace("<","")
+            value = value.replace(" ","")
             valueArray = [value]
             op = "lt";
           } else {
