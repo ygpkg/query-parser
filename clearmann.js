@@ -4,6 +4,9 @@
 // NOT ( k3:v3 OR k4:v4 ) ---->   (NOT k3:v3) AND (NOT k4:v4)
 // NOT ( k3:v3 AND k4:v4 ) ---->   (NOT k3:v3) OR (NOT k4:v4)
 function parseExpression(expression, mp) {
+  function convertToUpper(input) {
+    return input.toUpperCase()
+  }
   // 将中文的（）？转化为英文的()?
   function convertChinesePunctuation(input) {
     return input.replace(/？/g, '?')
@@ -204,9 +207,25 @@ function parseExpression(expression, mp) {
           key = mp.get(key);
           let valueArray = []
           let op = ""
-          if (value.includes("to")) {
-            valueArray = value.split(" to ");
+          if (value.includes("TO")) {
+            valueArray = value.split(" TO ");
             op = "range";
+          } else if (value.includes(">=")) {
+            value = value.replace(">= ","")
+            valueArray = [value]
+            op = "gte";
+          } else if (value.includes(">")) {
+            value = value.replace("> ","")
+            valueArray = [value]
+            op = "gt";
+          } else if (value.includes("<=")) {
+            value = value.replace("<= ","")
+            valueArray = [value]
+            op = "lte";
+          } else if (value.includes("<")) {
+            value = value.replace("< ","")
+            valueArray = [value]
+            op = "lt";
           } else {
             valueArray = [value];
             op = isBool ? "NOT" : "term";
@@ -238,6 +257,9 @@ function parseExpression(expression, mp) {
   }
 
   try {
+    // 字符串转化为大写
+    expression = convertToUpper(expression)
+    console.log("将字符串转化为大写：",expression)
     // 将中文的括号和问号转化为英文的问号和括号
     expression = convertChinesePunctuation(expression)
     // 查看是否为有效的中国专利号
@@ -309,7 +331,11 @@ expression = "人工？能";
 // expression = "k1:(v1) AND (k2:(v2) OR k3:(v3))";
 // expression = "k1:(v1) OR k2:(v2) AND (NOT k3:(v3) OR k4:(v4)) AND k5:(v5)";
 // expression = "TIT:(123)";
-expression = "DOCN:(2021 to 2024) AND k2:(v2)";
+expression = "DOCN:(2021 to 2024)";
+expression = "docn:(>= 2024)";
+expression = "docn:(> 2024)";
+expression = "docn:(<= 2024)";
+expression = "docn:(< 2024)";
 // 未能正确返回结果的
 console.log(expression);
 console.log(JSON.stringify(parseExpression(expression, map), null, 2));
