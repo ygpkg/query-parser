@@ -4,6 +4,17 @@
 // NOT ( k3:v3 OR k4:v4 ) ---->   (NOT k3:v3) AND (NOT k4:v4)
 // NOT ( k3:v3 AND k4:v4 ) ---->   (NOT k3:v3) OR (NOT k4:v4)
 function parseExpression(expression, mp) {
+  function removeManySpace(input) {
+    console.log(input);
+    let last = input[0];
+    let newInput = last;
+    for (let i = 1; i < input.length; i++) {
+      if (input[i] === last && last === ' ') continue
+      last = input[i];
+      newInput = newInput.concat(input[i]);
+    }
+    return newInput;
+  }
   function convertToUpper(input) {
     return input.toUpperCase()
   }
@@ -264,6 +275,9 @@ function parseExpression(expression, mp) {
   }
 
   try {
+    // 去除多余空格
+    expression = removeManySpace(expression)
+    console.log("去除多余空格",expression)
     // 字符串转化为大写
     expression = convertToUpper(expression)
     console.log("将字符串转化为大写：",expression)
