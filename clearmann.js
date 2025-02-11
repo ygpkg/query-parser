@@ -246,7 +246,7 @@ function parseExpression(expression, mp) {
             op = "lt";
           } else {
             valueArray = [value];
-            op = isBool ? "NOT" : "term";
+            op = isBool ? "NOT" : "match";
           }
           exprs.push({ op, key, value: valueArray });
         }
@@ -330,7 +330,7 @@ map
   .set("ANCS", "ANCS")
   .set("TA", "TA")
   .set("DESC", "DESC")
-  .set("TIT", "ALL")
+  .set("TIT", "title")
   .set("DOCN", "document_date");
 
 // 正确返回的结果
@@ -357,6 +357,7 @@ expression = "docn:(>= 2024)";
 expression = "docn:(> 2024)";
 expression = "docn:(<= 2024)";
 expression = "docn:(< 2024)";
+expression = "TIT:(v1)";
 // 未能正确返回结果的
 console.log(expression);
 console.log(JSON.stringify(parseExpression(expression, map), null, 2));
