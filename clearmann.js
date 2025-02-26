@@ -60,16 +60,13 @@ function parseExpression(expression, mp) {
     }
     return stack.length === 0;
   }
-  // 查看是否只为中文或者英文
-  function isChineseEnglishOnly(str) {
-    const regex = /^[\u4e00-\u9fa5a-zA-Z0-9?*]+$/;
-    return regex.test(str);
-  }
+
   // 处理数组
   function handleArray(array) {
+    const regex = /^[^\s:]+:\([^()]+\)$/;
     return array.map((item) => {
       if (item === "AND" || item === "OR" || item === "NOT") return item;
-      return `ALL:(${item})`
+      return !regex.test(item) ? `ALL:(${item})` : item;
     });
   }
 
@@ -348,8 +345,8 @@ expression = "docn:(<= 2024)";
 expression = "docn:(< 2024)";
 expression = "TIT:(v1)";
 expression = "CN202210744525.0";
-// expression = "汽车";
-expression = "本发明公开了一种代客泊车车速的确定方法、装置、设备及介质。该方法包括：获取目标车辆的实时位置信息和泊车路径信息；根据所述实时位置信息确定所述目标车辆所处的泊车阶段；其中，所述泊车状态包括自动驾驶阶段和自动泊车阶段；根据所述泊车路径信息，确定所述目标车辆在所处泊车阶段时的目标泊车车速。本技术方案，在保证车辆安全性和稳定性的同时，可以提高自主代客泊车的准确性和泊车效率，提升用户体验。";
+expression = "汽车";
+// expression = "本发明公开了一种代客泊车车速的确定方法、装置、设备及介质。该方法包括：获取目标车辆的实时位置信息和泊车路径信息；根据所述实时位置信息确定所述目标车辆所处的泊车阶段；其中，所述泊车状态包括自动驾驶阶段和自动泊车阶段；根据所述泊车路径信息，确定所述目标车辆在所处泊车阶段时的目标泊车车速。本技术方案，在保证车辆安全性和稳定性的同时，可以提高自主代客泊车的准确性和泊车效率，提升用户体验。";
 // 未能正确返回结果的
 console.log(expression);
 console.log(JSON.stringify(parseExpression(expression, map), null, 2));
