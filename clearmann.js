@@ -24,17 +24,6 @@ function parseExpression(expression, mp) {
         .replace(/（/g, '(')
         .replace(/）/g, ')');
   }
-  // 查看是否为有效的申请号
-  function isValidApplicationNumber(input) {
-    const regex = /^\d{4}\d{1}\d{7}\.\d{1}|X$/;
-    return regex.test(input);
-  }
-
-  // 查看是否为有效的中国专利号
-  function isValidChinesePatentNumber(input) {
-    const regex = /^CN\d{1}\d{8}[A-Za-z](\d)?$/;
-    return regex.test(input);
-  }
 
   // 查看括号匹配是否符合
   function checkBracketIntegrity(expression) {
@@ -80,7 +69,7 @@ function parseExpression(expression, mp) {
   function handleArray(array) {
     return array.map((item) => {
       if (item === "AND" || item === "OR" || item === "NOT") return item;
-      return isChineseEnglishOnly(item) ? `ALL:(${item})` : item;
+      return `ALL:(${item})`
     });
   }
 
@@ -278,34 +267,34 @@ function parseExpression(expression, mp) {
     // 去除多余空格
     expression = removeManySpace(expression)
     console.log("去除多余空格",expression)
+
     // 字符串转化为大写
     expression = convertToUpper(expression)
     console.log("将字符串转化为大写：",expression)
+
     // 将中文的括号和问号转化为英文的问号和括号
     expression = convertChinesePunctuation(expression)
-    // 查看是否为有效的中国专利号
-    if (isValidChinesePatentNumber(expression)) {
-      expression = `DOCN:(${expression})`;
-    }
-    // 查看是否为有效的申请号
-    if (isValidApplicationNumber(expression)) {
-      expression = `APN:(${expression})`;
-    }
+
     // 查看括号匹配是否符合
     if (!checkBracketIntegrity(expression)) return false;
     console.log("括号匹配成功");
+
     // 将字符串处理为数组
     expression = convertStringToArray(expression);
     if (expression.length === 0) {
       return false;
     }
     console.log("将字符串处理为数组: ", expression);
+
+    // 对生成的数组进行处理
+    console.log("-------",expression);
     expression = handleArray(expression);
     if (expression.length === 0) {
       return false;
     }
-
+    console.log("++++++",expression);
     console.log("对生成的数组进行处理: ", expression);
+
     const result = parseGroup();
     if (expression.length > 0) {
       return false;
@@ -358,6 +347,9 @@ expression = "docn:(> 2024)";
 expression = "docn:(<= 2024)";
 expression = "docn:(< 2024)";
 expression = "TIT:(v1)";
+expression = "CN202210744525.0";
+// expression = "汽车";
+expression = "本发明公开了一种代客泊车车速的确定方法、装置、设备及介质。该方法包括：获取目标车辆的实时位置信息和泊车路径信息；根据所述实时位置信息确定所述目标车辆所处的泊车阶段；其中，所述泊车状态包括自动驾驶阶段和自动泊车阶段；根据所述泊车路径信息，确定所述目标车辆在所处泊车阶段时的目标泊车车速。本技术方案，在保证车辆安全性和稳定性的同时，可以提高自主代客泊车的准确性和泊车效率，提升用户体验。";
 // 未能正确返回结果的
 console.log(expression);
 console.log(JSON.stringify(parseExpression(expression, map), null, 2));
