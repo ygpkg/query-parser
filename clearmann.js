@@ -4,6 +4,38 @@
 // NOT ( k3:v3 OR k4:v4 ) ---->   (NOT k3:v3) AND (NOT k4:v4)
 // NOT ( k3:v3 AND k4:v4 ) ---->   (NOT k3:v3) OR (NOT k4:v4)
 function parseExpression(expression, mp) {
+  function bracketsStack(input) {
+    let useBracket = 0
+    let unUseBracket = 0
+    let ansString = ""
+    if (input.length >= 1 ) {
+      if (input[0] === '(') {
+        unUseBracket ++
+      } else {
+        ansString += input[0]
+      }
+    }
+
+    for (let i = 1; i < input.length; i++) {
+      if (input[i] === '(') {
+        if (input[i - 1] === ':') {
+          useBracket ++
+          ansString += input[i]
+        } else {
+          unUseBracket ++
+        }
+      } else if (input[i] === ')') {
+        if (unUseBracket > 0) {
+          unUseBracket --
+        } else if (useBracket > 0) {
+          useBracket --
+          ansString += input[i]
+        }
+      } else ansString += input[i]
+    }
+    return ansString
+  }
+
   function removeManySpace(input) {
     console.log(input);
     let last = input[0];
@@ -29,34 +61,20 @@ function parseExpression(expression, mp) {
   function checkBracketIntegrity(expression) {
     const brackets = { "(": ")", "[": "]", "{": "}" };
     const stack = [];
-    let last = false;
     let ex = "";
     let firstMp = false;
     for (let i = 0; i < expression.length; i++) {
-      if (firstMp) {
-        ex += expression[i];
-      }
-      if (
-        expression[i] === "(" ||
-        expression[i] === "[" ||
-        expression[i] === "{"
-      ) {
+      ex += firstMp ? expression[i] : ''
+      if (expression[i] === "(" || expression[i] === "[" || expression[i] === "{") {
         stack.push(expression[i]);
-        last = true;
         firstMp = true;
         continue;
       }
-      if (
-        expression[i] === ")" ||
-        expression[i] === "]" ||
-        expression[i] === "}"
-      ) {
+      if (expression[i] === ")" || expression[i] === "]" || expression[i] === "}") {
         if (stack.length === 0) return false;
         const p = stack.pop();
         if (brackets[p] !== expression[i]) return false;
-        if (brackets[p] === expression[i] && last) return false;
       }
-      last = false;
     }
     return stack.length === 0;
   }
@@ -271,10 +289,14 @@ function parseExpression(expression, mp) {
 
     // 将中文的括号和问号转化为英文的问号和括号
     expression = convertChinesePunctuation(expression)
+    console.log("括号转换：",expression)
 
     // 查看括号匹配是否符合
     if (!checkBracketIntegrity(expression)) return false;
-    console.log("括号匹配成功");
+    console.log("括号匹配成功: ",expression);
+
+    expression = bracketsStack(expression)
+    console.log("多余括号处理:",expression)
 
     // 将字符串处理为数组
     expression = convertStringToArray(expression);
@@ -317,7 +339,8 @@ map
   .set("TA", "TA")
   .set("DESC", "DESC")
   .set("TIT", "title")
-  .set("DOCN", "document_date");
+  .set("DOCN", "document_date")
+  .set("APP", "document_date");
 
 // 正确返回的结果
 expression = "123 45";
@@ -345,7 +368,8 @@ expression = "docn:(<= 2024)";
 expression = "docn:(< 2024)";
 expression = "TIT:(v1)";
 expression = "CN202210744525.0";
-expression = "汽车";
+expression = "()汽车（人工()智能）";
+// expression = "APP:(航天中认软件测评科技(北京)有限责任公司)";
 // expression = "本发明公开了一种代客泊车车速的确定方法、装置、设备及介质。该方法包括：获取目标车辆的实时位置信息和泊车路径信息；根据所述实时位置信息确定所述目标车辆所处的泊车阶段；其中，所述泊车状态包括自动驾驶阶段和自动泊车阶段；根据所述泊车路径信息，确定所述目标车辆在所处泊车阶段时的目标泊车车速。本技术方案，在保证车辆安全性和稳定性的同时，可以提高自主代客泊车的准确性和泊车效率，提升用户体验。";
 // 未能正确返回结果的
 console.log(expression);
