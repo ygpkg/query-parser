@@ -233,55 +233,66 @@ function parseExpression(expression, mp) {
           // if (!mp[key]) return false;
           // key = mp[key];
           if (!mp.has(key)) return false;
-          key = mp.get(key);
+          key = String(mp.get(key));
           let valueArray = []
           let op = ""
-          if (value.includes("TO")) {
-            valueArray = value.split("TO");
-            for (let i = 0; i < valueArray.length; i++) {
-              valueArray[i] = valueArray[i].replace(" ", "");
-              if (!isFormatData(valueArray[i])) return false;
+          console.log("key", key)
+          if (key === 'applicant_date' || key === 'document_date' || key === 'pct_date') {
+            switch (true) {
+              case value.includes('TO') === true:
+                valueArray = value.split('TO')
+                for (let i = 0; i < valueArray.length; i++) {
+                  valueArray[i] = valueArray[i].replace(' ', '')
+                  if (!isFormatData(valueArray[i])) return false
+                }
+                valueArray.sort()
+                op = 'range'
+                break
+              case value.includes('>=') === true:
+                console.log("case value.includes('>=') === true:")
+                value = value.replace('>=', '')
+                value = value.replace(' ', '')
+                valueArray = [value]
+                op = 'gte'
+                if (!isFormatData(value)) return false
+                break
+              case value.includes('>') === true:
+                value = value.replace('>', '')
+                value = value.replace(' ', '')
+                valueArray = [value]
+                op = 'gt'
+                if (!isFormatData(value)) return false
+                break
+              case value.includes('<=') === true:
+                value = value.replace('<=', '')
+                value = value.replace(' ', '')
+                valueArray = [value]
+                op = 'lte'
+                if (!isFormatData(value)) return false
+                break
+              case value.includes('<') === true:
+                value = value.replace('<', '')
+                value = value.replace(' ', '')
+                valueArray = [value]
+                op = 'lt'
+                if (!isFormatData(value)) return false
+                break
+              case value.includes('=') === true:
+                value = value.replace('=', '')
+                value = value.replace(' ', '')
+                valueArray = [value]
+                op = 'match'
+                if (!isFormatData(value)) return false
+                break
+              default:
+                value = value.replace(' ', '')
+                valueArray = [value]
+                op = 'match'
+                if (!isFormatData(value)) return false
             }
-            valueArray.sort();
-            op = "range";
-          } else if (value.includes(">=")) {
-            value = value.replace(">=","")
-            value = value.replace(" ","")
-            valueArray = [value]
-            op = "gte";
-            if (!isFormatData(value)) return false;
-          } else if (value.includes(">")) {
-            value = value.replace(">","")
-            value = value.replace(" ","")
-            valueArray = [value]
-            op = "gt";
-            if (!isFormatData(value)) return false;
-          } else if (value.includes("<=")) {
-            value = value.replace("<=","")
-            value = value.replace(" ","")
-            valueArray = [value]
-            op = "lte";
-            if (!isFormatData(value)) return false;
-          } else if (value.includes("<")) {
-            value = value.replace("<","")
-            value = value.replace(" ","")
-            valueArray = [value]
-            op = "lt";
-            if (!isFormatData(value)) return false;
-          } else if (value.includes("=")) {
-            value = value.replace("=", "")
-            value = value.replace(" ", "")
-            valueArray = [value]
-            op = "match";
-            if (!isFormatData(value)) return false;
           }
-          else {
-            if (key === "applicant_date" || key === "document_date" || key === "pct_date") {
-              if (!isFormatData(value)) return false;
-            }
-            valueArray = [value];
-            op = isBool ? "NOT" : "match";
-          }
+          valueArray = [value];
+          op = isBool ? "NOT" : "match";
           exprs.push({ op, key, value: valueArray });
         }
       } else {
@@ -401,6 +412,6 @@ expression = "docn:(2029-02-28 to 2025-02-28)";
 // expression = "APP:(航天中认软件测评科技(北京)有限责任公司)";
 // expression = "本发明公开了一种代客泊车车速的确定方法、装置、设备及介质。该方法包括：获取目标车辆的实时位置信息和泊车路径信息；根据所述实时位置信息确定所述目标车辆所处的泊车阶段；其中，所述泊车状态包括自动驾驶阶段和自动泊车阶段；根据所述泊车路径信息，确定所述目标车辆在所处泊车阶段时的目标泊车车速。本技术方案，在保证车辆安全性和稳定性的同时，可以提高自主代客泊车的准确性和泊车效率，提升用户体验。";
 // 未能正确返回结果的
-expression = "汽车 AND DOCN:(2000-02-29)";
+expression = "汽车 AND DOCN:(=>2000-02-29)";
 console.log(expression);
 console.log(JSON.stringify(parseExpression(expression, map), null, 2));
