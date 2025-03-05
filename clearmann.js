@@ -237,7 +237,7 @@ function parseExpression(expression, mp) {
           let valueArray = []
           let op = ""
           console.log("key", key)
-          if (key === 'applicant_date' || key === 'document_date' || key === 'pct_date') {
+          if (key === 'application_date' || key === 'document_date' || key === 'pct_date') {
             switch (true) {
               case value.includes('TO') === true:
                 valueArray = value.split('TO')
@@ -379,7 +379,7 @@ map
   .set("DESC", "DESC")
   .set("TIT", "title")
   .set("DOCN", "document_date")
-  .set("APP", "document_date");
+  .set("APPD", "applicant_date");
 
 // 正确返回的结果
 expression = "123 45";
@@ -412,6 +412,6 @@ expression = "docn:(2029-02-28 to 2025-02-28)";
 // expression = "APP:(航天中认软件测评科技(北京)有限责任公司)";
 // expression = "本发明公开了一种代客泊车车速的确定方法、装置、设备及介质。该方法包括：获取目标车辆的实时位置信息和泊车路径信息；根据所述实时位置信息确定所述目标车辆所处的泊车阶段；其中，所述泊车状态包括自动驾驶阶段和自动泊车阶段；根据所述泊车路径信息，确定所述目标车辆在所处泊车阶段时的目标泊车车速。本技术方案，在保证车辆安全性和稳定性的同时，可以提高自主代客泊车的准确性和泊车效率，提升用户体验。";
 // 未能正确返回结果的
-expression = "汽车 AND DOCN:(=>2000-02-29)";
+expression = "APPD:(=>2020-01-12)";
 console.log(expression);
 console.log(JSON.stringify(parseExpression(expression, map), null, 2));
