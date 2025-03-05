@@ -187,6 +187,7 @@ function parseExpression(expression, mp) {
     let month = Number(inputArry[1]);
     let day = Number(inputArry[2]);
     if (year % 400 === 0 || (year % 4 === 0 && month % 100 !== 0)) months[2] = 29;
+    console.log("-----",year, month,day);
     if (year < 1966 || year > 2999) return false;
     if (month < 1 || month > 12) return false;
     if (day < 0 || day > months[month]) return false;
@@ -267,7 +268,17 @@ function parseExpression(expression, mp) {
             valueArray = [value]
             op = "lt";
             if (!isFormatData(value)) return false;
-          } else {
+          } else if (value.includes("=")) {
+            value = value.replace("=", "")
+            value = value.replace(" ", "")
+            valueArray = [value]
+            op = "match";
+            if (!isFormatData(value)) return false;
+          }
+          else {
+            if (key === "applicant_date" || key === "document_date" || key === "pct_date") {
+              if (!isFormatData(value)) return false;
+            }
             valueArray = [value];
             op = isBool ? "NOT" : "match";
           }
@@ -390,6 +401,6 @@ expression = "docn:(2029-02-28 to 2025-02-28)";
 // expression = "APP:(航天中认软件测评科技(北京)有限责任公司)";
 // expression = "本发明公开了一种代客泊车车速的确定方法、装置、设备及介质。该方法包括：获取目标车辆的实时位置信息和泊车路径信息；根据所述实时位置信息确定所述目标车辆所处的泊车阶段；其中，所述泊车状态包括自动驾驶阶段和自动泊车阶段；根据所述泊车路径信息，确定所述目标车辆在所处泊车阶段时的目标泊车车速。本技术方案，在保证车辆安全性和稳定性的同时，可以提高自主代客泊车的准确性和泊车效率，提升用户体验。";
 // 未能正确返回结果的
-// expression = "TIT:(v1)";
+expression = "汽车 AND DOCN:(2000-02-29)";
 console.log(expression);
 console.log(JSON.stringify(parseExpression(expression, map), null, 2));
