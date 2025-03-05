@@ -195,8 +195,7 @@ function parseExpression(expression, mp) {
     console.log("-----",year, month,day);
     if (year < 1966 || year > 2999) return false;
     if (month < 1 || month > 12) return false;
-    if (day < 0 || day > months[month]) return false;
-    return true;
+    return !(day < 0 || day > months[month])
   }
   // 对生成的数组进行处理
   function parseGroup(isBool = false) {
@@ -252,35 +251,35 @@ function parseExpression(expression, mp) {
                 valueArray.sort()
                 op = 'range'
                 break
-              case value.includes('>=') === true:
+              case value.startsWith('>=') === true:
                 value = value.replace('>=', '')
                 value = value.replace(' ', '')
                 valueArray = [value]
                 op = 'gte'
                 if (!isFormatData(value)) return false
                 break
-              case value.includes('>') === true:
+              case value.startsWith('>') === true:
                 value = value.replace('>', '')
                 value = value.replace(' ', '')
                 valueArray = [value]
                 op = 'gt'
                 if (!isFormatData(value)) return false
                 break
-              case value.includes('<=') === true:
+              case value.startsWith('<=') === true:
                 value = value.replace('<=', '')
                 value = value.replace(' ', '')
                 valueArray = [value]
                 op = 'lte'
                 if (!isFormatData(value)) return false
                 break
-              case value.includes('<') === true:
+              case value.startsWith('<') === true:
                 value = value.replace('<', '')
                 value = value.replace(' ', '')
                 valueArray = [value]
                 op = 'lt'
                 if (!isFormatData(value)) return false
                 break
-              case value.includes('=') === true:
+              case value.startsWith('=') === true:
                 value = value.replace('=', '')
                 value = value.replace(' ', '')
                 valueArray = [value]
@@ -382,8 +381,8 @@ map
   .set("TA", "TA")
   .set("DESC", "DESC")
   .set("TIT", "title")
-  .set("DOCN", "document_date")
-  .set("APPD", "applicant_date");
+  .set("DOCD", "document_date")
+  .set("APPD", "application_date");
 
 // 正确返回的结果
 expression = "123 45";
@@ -404,18 +403,19 @@ expression = "人工？能";
 // expression = "k1:(v1) AND (k2:(v2) OR k3:(v3))";
 // expression = "k1:(v1) OR k2:(v2) AND (NOT k3:(v3) OR k4:(v4)) AND k5:(v5)";
 // expression = "TIT:(123)";
-expression = "DOCN:(2021 to 2024)";
-expression = "docn:(>= 2025-02-29)";
-expression = "docn:(> 2028)";
-expression = "docn:(2029-02-02 to 2025-02-28)";
-// expression = "docn:(<= 2027)";
-// expression = "docn:(< 2024)";
+expression = "DOCD:(2021 to 2024)";
+expression = "DOCD:(>= 2025-02-29)";
+expression = "DOCD:(> 2028)";
+expression = "DOCD:(2029-02-02 to 2025-02-28)";
+// expression = "DOCD:(<= 2027)";
+// expression = "DOCD:(< 2024)";
 // expression = "TIT:(v1)";
 // expression = "CN202210744525.0";
 // expression = "()汽车（人工()智能）";
 // expression = "APP:(航天中认软件测评科技(北京)有限责任公司)";
 // expression = "本发明公开了一种代客泊车车速的确定方法、装置、设备及介质。该方法包括：获取目标车辆的实时位置信息和泊车路径信息；根据所述实时位置信息确定所述目标车辆所处的泊车阶段；其中，所述泊车状态包括自动驾驶阶段和自动泊车阶段；根据所述泊车路径信息，确定所述目标车辆在所处泊车阶段时的目标泊车车速。本技术方案，在保证车辆安全性和稳定性的同时，可以提高自主代客泊车的准确性和泊车效率，提升用户体验。";
 // 未能正确返回结果的
-// expression = "APPD:(=>2020-01-12)";
+expression = "APPD:(2020-01-2)";
+expression = "汽车 AND DOCD:(1989-06-14 to 1989-06-14)"
 console.log(expression);
 console.log(JSON.stringify(parseExpression(expression, map), null, 2));
