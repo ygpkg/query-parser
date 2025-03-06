@@ -244,11 +244,12 @@ function parseExpression(expression, mp) {
             switch (true) {
               case value.includes('TO') === true:
                 valueArray = value.split('TO')
-                for (let i = 0; i < valueArray.length; i++) {
+                valueArray.unshift(' ')
+                for (let i = 1; i < valueArray.length; i++) {
                   valueArray[i] = valueArray[i].replace(' ', '')
+                  if (String(valueArray[i - 1]) > String(valueArray[i])) return false
                   if (!isFormatData(valueArray[i])) return false
                 }
-                valueArray.sort()
                 op = 'range'
                 break
               case value.startsWith('>=') === true:
@@ -277,13 +278,6 @@ function parseExpression(expression, mp) {
                 value = value.replace(' ', '')
                 valueArray = [value]
                 op = 'lt'
-                if (!isFormatData(value)) return false
-                break
-              case value.startsWith('=') === true:
-                value = value.replace('=', '')
-                value = value.replace(' ', '')
-                valueArray = [value]
-                op = 'match'
                 if (!isFormatData(value)) return false
                 break
               default:
@@ -416,6 +410,6 @@ expression = "DOCD:(2029-02-02 to 2025-02-28)";
 // expression = "本发明公开了一种代客泊车车速的确定方法、装置、设备及介质。该方法包括：获取目标车辆的实时位置信息和泊车路径信息；根据所述实时位置信息确定所述目标车辆所处的泊车阶段；其中，所述泊车状态包括自动驾驶阶段和自动泊车阶段；根据所述泊车路径信息，确定所述目标车辆在所处泊车阶段时的目标泊车车速。本技术方案，在保证车辆安全性和稳定性的同时，可以提高自主代客泊车的准确性和泊车效率，提升用户体验。";
 // 未能正确返回结果的
 expression = "APPD:(2020-01-2)";
-expression = "汽车 AND DOCD:(1989-06-14 to 1989-06-14)"
+expression = "汽车 AND DOCD:(1989-06-14 to 1989-06-15)"
 console.log(expression);
 console.log(JSON.stringify(parseExpression(expression, map), null, 2));
