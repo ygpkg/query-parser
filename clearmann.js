@@ -250,6 +250,7 @@ function parseExpression(expression, mp) {
                   if (String(valueArray[i - 1]) > String(valueArray[i])) return false
                   if (!isFormatData(valueArray[i])) return false
                 }
+                valueArray.shift()
                 op = 'range'
                 break
               case value.startsWith('>=') === true:
